@@ -639,7 +639,8 @@ template<class T> void LiteScanner::ScanData(const art::Event& evt, const size_t
     art::InputTag inputtag(label);
     evt.getByLabel(inputtag, dh);
 
-    if(dh.isValid()) fAlg.ScanData(dh,lite_data);
+    if(dh.isValid()) 
+      fAlg.ScanData(dh,lite_data);
 
     for ( unsigned int cat=0; cat<(unsigned int)opdet::NumUBOpticalChannelCategories; cat++ ) {
       
@@ -655,7 +656,10 @@ template<class T> void LiteScanner::ScanData(const art::Event& evt, const size_t
     art::InputTag inputtag(label);
     evt.getByLabel(inputtag, dh);
     
-    if(!dh.isValid()) return;
+    if(!dh.isValid())  {
+      std::cout << "Skip scanning of data with label=" << label << std::endl;
+      return;
+    }
     fAlg.ScanData(dh,lite_data);
   }
 }
@@ -681,20 +685,32 @@ template<class T> void LiteScanner::ScanDataCRT(const art::Event& evt, const siz
   art::InputTag inputtag2(fDAQHeaderTimeUBooNE);
   evt.getByLabel(inputtag2, ddh);
   
-  if(!dh.isValid() || !ddh.isValid()) {
+  if(!dh.isValid()) {
     std::stringstream msg;
     msg << "[" << __FILE__ << ".L" << __LINE__ << "::" << __FUNCTION__ << "] "
-	<< "invalid handles. crthit/track=" << dh.isValid() << " daqheader=" << ddh.isValid()
+	<< "invalid handles. crthit/track=" << dh.isValid() 
 	<< std::endl;
     std::cout << "[WARNING]: " << msg.str();
     //throw cet::exception(msg.str());
     return;
   }
-  // std::cout << "[" << __FILE__ << ".L" << __LINE__ << "::" << __FUNCTION__ << "] "
-  // 	    << " run ScanDataTest(crthit/track,daqheader,lite_data)"
-  // 	    << std::endl;
-  fAlg.ScanDataTest(dh,ddh,lite_data);
+  
+  if ( !ddh.isValid()) {
+    std::stringstream msg;
+    msg << "[" << __FILE__ << ".L" << __LINE__ << "::" << __FUNCTION__ << "] " << " invalid daqheader=" << ddh.isValid()
+	<< " Process without gps time."
+	<< std::endl;
+    std::cout << "[WARNING]: " << msg.str();
+    fAlg.ScanData(dh,lite_data);
+  }
+  else {
+    std::cout << "[" << __FILE__ << ".L" << __LINE__ << "::" << __FUNCTION__ << "] "
+	      << " run ScanDataTest(crthit/track,daqheader,lite_data)"
+	      << std::endl;
+    fAlg.ScanDataTest(dh,ddh,lite_data);
+  }
 
+  return;
 }
 //
 template<class T> void LiteScanner::ScanDataDAQTime(const art::Event& evt, const size_t name_index)
